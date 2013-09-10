@@ -41,7 +41,6 @@ $wgExtensionCredits['other'][] = array (
 function wfCategoryTemplate()
 {
     global $wgHooks;
-    wfLoadExtensionMessages('CategoryTemplate');
     $wgHooks['CategoryPageView'][] = 'efCategoryTemplateCategoryPageView';
 }
 
@@ -57,7 +56,7 @@ function efCategoryTemplateCategoryPageView($catpage)
     $cat = $catpage->mTitle->getText();
     $deftitle = $makedefpos = '';
     if (($title = Title::newFromText($wgContLang->getNsText(NS_TEMPLATE).":".$wgContLang->getNsText(NS_CATEGORY).":".$cat)) &&
-        (!method_exists($title, 'userCanReadEx') || $title->userCanReadEx()) &&
+        $title->userCanRead() &&
         ($rev = Revision::newFromId($title->getLatestRevID())))
     {
         /* Fetch page template from Template:Category:CATEGORY_NAME */
