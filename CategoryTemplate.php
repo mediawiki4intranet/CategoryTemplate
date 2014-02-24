@@ -46,7 +46,7 @@ function wfCategoryTemplate()
 
 function efCategoryTemplateCategoryPageView($catpage)
 {
-    global $wgOut, $wgScript, $wgParser, $wgContLang, $wgCanonicalNamespaceNames, $CategoryTemplateMessages;
+    global $wgOut, $wgScript, $wgTitle, $wgParser, $wgContLang, $wgCanonicalNamespaceNames, $CategoryTemplateMessages;
     $boxtext = addslashes(wfMsg("addcategorytemplate-create-article"));
     $btext = addslashes(wfMsg("addcategorytemplate-submit"));
     $confirmtext = addslashes(wfMsg("addcategorytemplate-confirm"));
@@ -74,6 +74,7 @@ function efCategoryTemplateCategoryPageView($catpage)
             }
             $text = substr($text, 0, $m[0][1]) . substr($text, $m[0][1]+strlen($m[0][0]));
         }
+        $text = $wgParser->getPreloadText($text, $wgTitle, new ParserOptions());
     }
     else
     {
