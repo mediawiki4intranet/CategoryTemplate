@@ -47,6 +47,12 @@ function wfCategoryTemplate()
 function efCategoryTemplateCategoryPageView($catpage)
 {
     global $wgOut, $wgScript, $wgTitle, $wgParser, $wgContLang, $wgCanonicalNamespaceNames, $CategoryTemplateMessages;
+    
+    if (!$wgTitle->quickUserCan( 'create' )){
+        // Only if users have rights to create pages
+        return true;
+    }
+    
     $boxtext = addslashes(wfMsg("addcategorytemplate-create-article"));
     $btext = addslashes(wfMsg("addcategorytemplate-submit"));
     $confirmtext = addslashes(wfMsg("addcategorytemplate-confirm"));
