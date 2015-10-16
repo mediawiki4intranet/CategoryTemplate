@@ -62,7 +62,7 @@ function efCategoryTemplateCategoryPageView($catpage)
     $cat = $catpage->mTitle->getText();
     $deftitle = $makedefpos = '';
     if (($title = Title::newFromText($wgContLang->getNsText(NS_TEMPLATE).":".$wgContLang->getNsText(NS_CATEGORY).":".$cat)) &&
-        $title->userCanRead() &&
+        $title->userCan('read') &&
         ($rev = Revision::newFromId($title->getLatestRevID())))
     {
         /* Fetch page template from Template:Category:CATEGORY_NAME */
