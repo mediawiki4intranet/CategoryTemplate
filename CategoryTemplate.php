@@ -6,17 +6,24 @@
  * @author Vitaliy Filippov <vitalif@mail.ru>
  * @license http://www.gnu.org/copyleft/gpl.html GNU General Public License 2.0 or later
  *
- * This extension adds a textbox and a button to category pages, allowing
- * to easily create pages inside the category. A template with name
- * Template:Category:CATEGORY_NAME is used as a stub for the new page.
- * <!-- default title = ... --> is matched and removed from that template,
- * and the value is placed into new page title textbox by default. Also,
- * optional '$' inside the value indicates cursor position.
- * I.e. you can specify <!-- default title = Prefix $ (suffix) -->,
+ * This extension adds a textbox and a button to category pages, allowing to easily
+ * create pages inside the category. After entering a title and pressing "Create",
+ * you get one of the following:
+ * 1) Redirect to Special:Upload with the "description" field pre-filled for File:... titles
+ * 2) Redirect to Special:FormCreate/<Form>/<Title> if you're using Semantic Forms extension
+ *    and a {{#default form:..}} is defined.
+ * 3) Redirect to page editing with the textbox pre-filled in other cases.
+ *
+ * Pre-fill text is generated from Template:Category:CATEGORY_NAME if it exists.
+ * __FULLPAGENAME__ inside it is replaced with the entered page title.
+ * <!-- default title = ... --> is matched and removed from the template,
+ * and used as a default value for the page creation textbox on the category page.
+ * '$' character inside the default title means cursor position, i.e.
+ * you can specify <!-- default title = Prefix $ (suffix) -->,
  * and the initial page title will be "Prefix  (suffix)" with cursor placed
  * between two spaces.
  *
- * Inspired by Liang Chen The BiGreat\'s extension:
+ * Inspired by Liang Chen The BiGreat's extension:
  * http://www.liang-chen.com/myworld/content/view/36/70/
  *
  * This program is free software; you can redistribute it and/or modify
@@ -28,39 +35,51 @@
 if (!defined('MEDIAWIKI'))
     die();
 
-$wgExtensionFunctions[] = "wfCategoryTemplate";
+$wgHooks['CategoryPageView'][] = 'efCategoryTemplateCategoryPageView';
+$wgHooks['ParserAfterParse'][] = 'efCategoryTemplateParserAfterParse';
 $wgExtensionMessagesFiles['CategoryTemplate'] = dirname(__FILE__) . '/CategoryTemplate.i18n.php';
 $wgExtensionCredits['other'][] = array (
     'name'        => 'Add Article to Category with template',
     'description' => 'Your MediaWiki will get an inputbox on each Category page, and you can create a new article directly to that category, based on Template:Category:<category_name> or simple [[Category:<category_name>]] string',
     'author'      => 'Vitaliy Filippov',
-    'url'         => 'http://wiki.4intra.net/CategoryTemplate_(MediaWiki)',
-    'version'     => '1.1 (2011-05-03)',
+    'url'         => 'http://wiki.4intra.net/CategoryTemplate',
+    'version'     => '1.2 (2015-11-25)',
 );
 
-function wfCategoryTemplate()
+$wgResourceModules['ext.CategoryTemplate'] = array(
+    'localBasePath' => __DIR__,
+    'remoteExtPath' => 'CategoryTemplate',
+    'scripts' => array('CategoryTemplate.js'),
+    'messages' => array('addcategorytemplate-confirm'),
+);
+
+function efCategoryTemplateParserAfterParse($parser, $text, $stripState)
 {
-    global $wgHooks;
-    $wgHooks['CategoryPageView'][] = 'efCategoryTemplateCategoryPageView';
+    $output = $parser->getOutput();
+    $sf = $output->getProperty('SFDefaultForm');
+    if ($sf)
+    {
+        $output->addJsConfigVars(array(
+            'sfDefaultForm' => $sf,
+        ));
+    }
 }
 
 function efCategoryTemplateCategoryPageView($catpage)
 {
     global $wgOut, $wgScript, $wgTitle, $wgParser, $wgContLang, $wgCanonicalNamespaceNames, $CategoryTemplateMessages;
-    
-    if (!$wgTitle->quickUserCan( 'create' )){
+    if (!$wgTitle->quickUserCan('create'))
+    {
         // Only if users have rights to create pages
         return true;
     }
-    
     $boxtext = addslashes(wfMsg("addcategorytemplate-create-article"));
     $btext = addslashes(wfMsg("addcategorytemplate-submit"));
-    $confirmtext = addslashes(wfMsg("addcategorytemplate-confirm"));
     $Action = htmlspecialchars($wgScript);
-    $s1 = addslashes($wgCanonicalNamespaceNames[NS_IMAGE]);
-    $s2 = addslashes($wgContLang->getNsText(NS_IMAGE));
+    $s1 = addslashes($wgCanonicalNamespaceNames[NS_FILE]);
+    $s2 = addslashes($wgContLang->getNsText(NS_FILE));
     $cat = $catpage->mTitle->getText();
-    $deftitle = $makedefpos = '';
+    $deftitle = $defpos = '';
     if (($title = Title::newFromText($wgContLang->getNsText(NS_TEMPLATE).":".$wgContLang->getNsText(NS_CATEGORY).":".$cat)) &&
         $title->userCan('read') &&
         ($rev = Revision::newFromId($title->getLatestRevID())))
@@ -74,10 +93,7 @@ function efCategoryTemplateCategoryPageView($catpage)
                Optional '$' inside it indicates cursor position. */
             $deftitle = addslashes(trim($m[1][0]));
             if (($defpos = strpos($deftitle, '$')) !== false)
-            {
                 $deftitle = substr($deftitle, 0, $defpos) . substr($deftitle, $defpos+1);
-                $makedefpos = 'f.selectionStart='.$defpos.'; f.selectionEnd=0; ';
-            }
             $text = substr($text, 0, $m[0][1]) . substr($text, $m[0][1]+strlen($m[0][0]));
         }
         $text = $wgParser->getPreloadText($text, $wgTitle, new ParserOptions());
@@ -87,53 +103,31 @@ function efCategoryTemplateCategoryPageView($catpage)
         /* Default page template: add only category membership */
         $text = "\n\n\n[[".$wgContLang->getNsText(NS_CATEGORY).":$cat]]";
     }
-    $text = str_replace("\n", "\\n", addslashes($text));
     $temp2 = <<<ENDFORM
-<!-- Add Article Extension Start -->
-<script type="text/javascript">
-function clearText(f) { if (f.defaultValue == f.value) { f.value = "$deftitle"; $makedefpos} }
-function addText(f) { if (f.value == "$deftitle" || f.value == "") f.value = f.defaultValue; }
-function checkname()
-{
-    var inp = document.getElementById('createboxInput');
-    var l = 0;
-    var txt = "$text";
-    txt = txt.replace(/__FULLPAGENAME__/g, inp.value);
-    if (inp.value.substr(0, l = "$s1:".length) != "$s1:")
-    {
-        l = 0;
-        if (inp.value.substr(0, l = "$s2:".length) != "$s2:")
-            l = 0;
-    }
-    if (l)
-    {
-        document.createbox.wpDestFile.value = inp.value.substr(l);
-        document.createbox.wpUploadDescription.value = txt;
-        document.createbox.wpTextbox1.value = "";
-        inp.value = 'Special:Upload';
-    }
-    else
-    {
-        document.createbox.wpUploadDescription.value = "";
-        document.createbox.wpTextbox1.value = txt;
-    }
-    return inp.value != inp.defaultValue || confirm("$confirmtext".replace("%s", document.createbox.createboxInput.value));
-}
-</script>
 <table border="0" align="right" width="423" cellspacing="0" cellpadding="0">
 <tr><td width="100%" align="right" bgcolor="">
-<form name="createbox" action="{$Action}" method="POST" class="createbox" onsubmit="return checkname()">
+<form name="createbox" action="{$Action}" method="POST" class="createbox" onsubmit="return catTemplate.checkName()">
     <input type="hidden" name="action" value="edit" />
     <input type="hidden" name="wpDestFile" value="" />
     <input type="hidden" name="wpUploadDescription" value="" />
     <input type="hidden" name="wpTextbox1" value="" />
-    <input id="createboxInput" class="createboxInput" name="title" type="text" value="$boxtext" size="30" style="color:#666;" onfocus="clearText(this);" onblur="addText(this);" />
-    <input type="submit" name="create" class="createboxButton" value="$btext" />
+    <input type="hidden" name="title" value="" />
+    <input id="createboxInput" class="createboxInput" type="text"
+        value="$boxtext" size="30" style="color: #666; font-size: 100%;" onfocus="catTemplate.clearText(this);" onblur="catTemplate.addText(this);" />
+    <input type="submit" name="create" class="createboxButton" value="$btext" style="font-size: 100%;" />
 </form>
 </td></tr>
 </table>
-<!-- Add Article Extension End -->
 ENDFORM;
+    $temp2 .= Skin::makeVariablesScript(array(
+        'catTpl' => array(
+            'ns_file' => "^($s1|$s2):",
+            'text' => $text,
+            'deftitle' => $deftitle,
+            'deftitlepos' => $defpos,
+        ),
+    ));
     $wgOut->addHTML($temp2);
+    $wgOut->addModules('ext.CategoryTemplate');
     return true;
 }
