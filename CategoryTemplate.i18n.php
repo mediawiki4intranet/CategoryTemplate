@@ -15,11 +15,11 @@ $messages = array();
 $messages['en'] = array(
     'addcategorytemplate-create-article' => 'Create an Article to this category',
     'addcategorytemplate-submit'         => 'Create',
-    'addcategorytemplate-confirm'        => 'Really add an Article with default name %s to this category?',
+    'addcategorytemplate-confirm'        => 'Really add an Article with default name "$1" to this category?',
 );
 
 $messages['ru'] = array(
     'addcategorytemplate-create-article' => 'Создать статью в данной категории',
     'addcategorytemplate-submit'         => 'Создать',
-    'addcategorytemplate-confirm'        => 'Вы уверены, что хотите создать статью с названием "%s" в данной категории?',
+    'addcategorytemplate-confirm'        => 'Вы уверены, что хотите создать статью с названием "$1" в данной категории?',
 );

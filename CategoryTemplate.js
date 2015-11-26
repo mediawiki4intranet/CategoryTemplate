@@ -8,7 +8,7 @@ window.catTemplate = {
             if (cfg.deftitlepos !== false)
             {
                 f.selectionStart = cfg.deftitlepos;
-                f.selectionEnd = 0;
+                f.selectionEnd = cfg.deftitlepos;
             }
         }
     },

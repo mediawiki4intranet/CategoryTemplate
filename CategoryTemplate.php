@@ -92,8 +92,8 @@ function efCategoryTemplateCategoryPageView($catpage)
                This value will be placed into the page title editbox by default.
                Optional '$' inside it indicates cursor position. */
             $deftitle = addslashes(trim($m[1][0]));
-            if (($defpos = strpos($deftitle, '$')) !== false)
-                $deftitle = substr($deftitle, 0, $defpos) . substr($deftitle, $defpos+1);
+            if (($defpos = mb_strpos($deftitle, '$')) !== false)
+                $deftitle = mb_substr($deftitle, 0, $defpos) . mb_substr($deftitle, $defpos+1);
             $text = substr($text, 0, $m[0][1]) . substr($text, $m[0][1]+strlen($m[0][0]));
         }
         $text = $wgParser->getPreloadText($text, $wgTitle, new ParserOptions());
