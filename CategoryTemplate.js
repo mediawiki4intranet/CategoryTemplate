@@ -30,6 +30,8 @@ window.catTemplate = {
         if (ns_file.exec(inp.value))
         {
             // File upload
+            document.createbox.method = 'POST';
+            document.getElementById('createbox_action').value = 'edit';
             document.createbox.wpDestFile.value = inp.value.substr(l);
             document.createbox.wpUploadDescription.value = txt;
             document.createbox.wpTextbox1.value = "";
@@ -38,12 +40,16 @@ window.catTemplate = {
         else if (sf_form = mw.config.get('sfDefaultForm'))
         {
             // Create page with semantic form
+            document.createbox.method = 'GET';
+            document.getElementById('createbox_action').value = '';
             document.createbox.wpTextbox1.value = "";
             document.createbox.title.value = 'Special:FormEdit/'+sf_form+'/'+inp.value;
         }
         else
         {
             // Normal page
+            document.createbox.method = 'POST';
+            document.getElementById('createbox_action').value = 'edit';
             document.createbox.wpUploadDescription.value = "";
             document.createbox.wpTextbox1.value = txt;
             document.createbox.title.value = inp.value;

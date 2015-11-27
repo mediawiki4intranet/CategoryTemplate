@@ -107,7 +107,7 @@ function efCategoryTemplateCategoryPageView($catpage)
 <table border="0" align="right" width="423" cellspacing="0" cellpadding="0">
 <tr><td width="100%" align="right" bgcolor="">
 <form name="createbox" action="{$Action}" method="POST" class="createbox" onsubmit="return catTemplate.checkName()">
-    <input type="hidden" name="action" value="edit" />
+    <input type="hidden" name="action" id="createbox_action" value="edit" />
     <input type="hidden" name="wpDestFile" value="" />
     <input type="hidden" name="wpUploadDescription" value="" />
     <input type="hidden" name="wpTextbox1" value="" />
